@@ -34,6 +34,11 @@ function parseIsoDateOnly(
   return s;
 }
 
+/** Calendar date in UTC (YYYY-MM-DD), for default “today” listing filter. */
+function utcTodayIsoDate(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
@@ -151,8 +156,12 @@ export class DailyListingsService {
   }
 
   /**
-   * Firm-wide (or ACL-scoped) daily listings with optional search and
-   * inclusive `currentDate` bounds. Does not filter on `nextDate`.
+   * Firm-wide (or ACL-scoped) daily listings with optional search.
+   * With a non-empty `search`, `currentDate` is not filtered (search runs across
+   * all dates). Without `search`, when `dateFrom` / `dateTo` are omitted, only
+   * rows whose `currentDate` is today (UTC) are returned; if either bound is
+   * sent, results use those inclusive `currentDate` bounds.
+   * Does not filter on `nextDate`.
    */
   async findAll(
     user: User,
@@ -175,6 +184,7 @@ export class DailyListingsService {
 
     const dateFrom = parseIsoDateOnly('dateFrom', filters.dateFrom);
     const dateTo = parseIsoDateOnly('dateTo', filters.dateTo);
+    const hasDateRangeFilter = dateFrom !== undefined || dateTo !== undefined;
     if (dateFrom && dateTo && dateFrom > dateTo) {
       throw new BadRequestException('dateFrom must be on or before dateTo');
     }
@@ -197,14 +207,21 @@ export class DailyListingsService {
       return empty();
     }
 
-    if (dateFrom) {
-      qb.andWhere('dl.currentDate >= :dateFrom', { dateFrom });
-    }
-    if (dateTo) {
-      qb.andWhere('dl.currentDate <= :dateTo', { dateTo });
+    const pattern = sanitizeLikePattern(filters.search);
+    if (!pattern) {
+      if (hasDateRangeFilter) {
+        if (dateFrom) {
+          qb.andWhere('dl.currentDate >= :dateFrom', { dateFrom });
+        }
+        if (dateTo) {
+          qb.andWhere('dl.currentDate <= :dateTo', { dateTo });
+        }
+      } else {
+        const today = utcTodayIsoDate();
+        qb.andWhere('dl.currentDate = :today', { today });
+      }
     }
 
-    const pattern = sanitizeLikePattern(filters.search);
     if (pattern) {
       qb.andWhere(
         new Brackets((qb2) => {
