@@ -8,9 +8,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Document, Matter, User } from '../database/entities';
 import { UserRole } from '../common/enums/user-role.enum';
-import { ConfigService } from '@nestjs/config';
+import { DocumentCategory } from '../common/enums/document-category.enum';
 import * as path from 'path';
 import * as fs from 'fs';
+import { v4 as uuidv4 } from 'uuid';
+import {
+  CloudinaryService,
+  CloudinaryResourceKind,
+} from '../cloudinary/cloudinary.service';
 
 @Injectable()
 export class DocumentsService {
@@ -19,13 +24,14 @@ export class DocumentsService {
     private documentRepo: Repository<Document>,
     @InjectRepository(Matter)
     private matterRepo: Repository<Matter>,
-    private config: ConfigService,
+    private cloudinary: CloudinaryService,
   ) {}
 
   async upload(
     matterId: string,
     file: Express.Multer.File,
     user: User,
+    category: DocumentCategory = DocumentCategory.GENERAL,
   ): Promise<Document> {
     const matter = await this.matterRepo.findOne({
       where: { id: matterId },
@@ -35,15 +41,28 @@ export class DocumentsService {
       throw new NotFoundException('Matter not found');
     }
     await this.assertMatterAccess(matter, user);
-    if (!file || !file.path) {
+    if (!file?.buffer?.length) {
       throw new BadRequestException('No file provided');
     }
+
+    const base = this.cloudinary.getBaseFolder();
+    const ext = path.extname(file.originalname) || '';
+    const publicId = `${base}/matters/${matterId}/${uuidv4()}${ext}`;
+
+    const { secureUrl, publicId: returnedPublicId, resourceType } =
+      await this.cloudinary.uploadBuffer(file.buffer, {
+        publicId,
+        mimetype: file.mimetype,
+      });
 
     const doc = this.documentRepo.create({
       matterId,
       fileName: file.originalname,
-      filePath: file.path,
+      filePath: secureUrl,
+      cloudinaryPublicId: returnedPublicId,
+      cloudinaryResourceType: resourceType,
       uploadedById: user.id,
+      category,
     });
     return this.documentRepo.save(doc);
   }
@@ -85,14 +104,28 @@ export class DocumentsService {
       throw new NotFoundException('Document not found');
     }
     await this.assertMatterAccess(doc.matter, user);
-    if (fs.existsSync(doc.filePath)) {
-      fs.unlinkSync(doc.filePath);
+
+    if (doc.cloudinaryPublicId && doc.cloudinaryResourceType) {
+      await this.cloudinary.destroy(
+        doc.cloudinaryPublicId,
+        doc.cloudinaryResourceType as CloudinaryResourceKind,
+      );
+    } else if (doc.filePath && !this.isRemoteUrl(doc.filePath)) {
+      const resolved = path.resolve(doc.filePath);
+      if (fs.existsSync(resolved)) {
+        fs.unlinkSync(resolved);
+      }
     }
+
     await this.documentRepo.remove(doc);
   }
 
   getFilePath(doc: Document): string {
     return path.resolve(doc.filePath);
+  }
+
+  isRemoteUrl(filePath: string): boolean {
+    return filePath.startsWith('https://') || filePath.startsWith('http://');
   }
 
   private async assertMatterAccess(matter: Matter, user: User): Promise<void> {

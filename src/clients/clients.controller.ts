@@ -8,7 +8,12 @@ import {
   Param,
   Query,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { ClientsService } from './clients.service';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -47,6 +52,31 @@ export class ClientsController {
   @Roles(UserRole.FIRM_ADMIN, UserRole.LAWYER, UserRole.INDIVIDUAL, UserRole.CLIENT)
   findOne(@Param('id') id: string, @CurrentUser() user: User) {
     return this.clientsService.findOne(id, user);
+  }
+
+  @Post(':id/kyc-document')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.FIRM_ADMIN, UserRole.LAWYER, UserRole.INDIVIDUAL)
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: {
+        fileSize: parseInt(process.env.MAX_FILE_SIZE ?? '10485760', 10),
+      },
+    }),
+  )
+  uploadKycDocument(
+    @Param('id') id: string,
+    @Query('kind') kind: string,
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentUser() user: User,
+  ) {
+    if (kind !== 'aadhaar' && kind !== 'pan' && kind !== 'driving') {
+      throw new BadRequestException(
+        'Query "kind" must be one of: aadhaar, pan, driving',
+      );
+    }
+    return this.clientsService.uploadKycDocument(id, kind, file, user);
   }
 
   @Patch(':id')

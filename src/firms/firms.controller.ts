@@ -10,10 +10,7 @@ import {
   UploadedFile,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
-import * as fs from 'fs';
-import { v4 as uuidv4 } from 'uuid';
+import { memoryStorage } from 'multer';
 import { FirmsService } from './firms.service';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -49,19 +46,15 @@ export class FirmsController {
   @Patch(':id/logo')
   @UseInterceptors(
     FileInterceptor('logo', {
-      storage: diskStorage({
-        destination: (req, file, cb) => {
-          const uploadPath = process.env.UPLOAD_PATH ?? './uploads';
-          const dir = `${uploadPath}/logos`;
-          fs.mkdirSync(dir, { recursive: true });
-          cb(null, dir);
-        },
-        filename: (req, file, cb) => {
-          cb(null, `${uuidv4()}${extname(file.originalname)}`);
-        },
-      }),
+      storage: memoryStorage(),
       limits: {
         fileSize: parseInt(process.env.MAX_FILE_SIZE ?? '5242880', 10),
+      },
+      fileFilter: (_req, file, cb) => {
+        if (!file.mimetype.startsWith('image/')) {
+          return cb(new Error('Logo must be an image file'), false);
+        }
+        cb(null, true);
       },
     }),
   )

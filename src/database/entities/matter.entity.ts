@@ -14,20 +14,21 @@ import { User } from './user.entity';
 import { Hearing } from './hearing.entity';
 import { Invoice } from './invoice.entity';
 import { Document } from './document.entity';
+import { CourtType, CourtName } from './court-reference.entity';
 
 @Entity('matters')
 export class Matter {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'varchar', length: 500, name: 'case_title' })
-  caseTitle: string;
+  @Column({ type: 'varchar', length: 500, name: 'matter_name' })
+  matterName: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  court: string | null;
+  @Column({ type: 'simple-json', nullable: true })
+  complainants: string[] | null;
 
-  @Column({ type: 'varchar', length: 255, nullable: true, name: 'case_type' })
-  caseType: string | null;
+  @Column({ type: 'simple-json', nullable: true })
+  defendants: string[] | null;
 
   @Column({
     type: 'enum',
@@ -35,6 +36,23 @@ export class Matter {
     default: MatterStatus.OPEN,
   })
   status: MatterStatus;
+
+  @Column({ type: 'uuid', nullable: true, name: 'court_type_id' })
+  courtTypeId: string | null;
+
+  @ManyToOne(() => CourtType, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'court_type_id' })
+  courtType: CourtType | null;
+
+  @Column({ type: 'uuid', nullable: true, name: 'court_name_id' })
+  courtNameId: string | null;
+
+  @ManyToOne(() => CourtName, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'court_name_id' })
+  courtName: CourtName | null;
+
+  @Column({ type: 'varchar', length: 255, nullable: true, name: 'case_type' })
+  caseType: string | null;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   cnr: string | null;
@@ -63,7 +81,11 @@ export class Matter {
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @Column({ name: 'updated_at', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
+  @Column({
+    name: 'updated_at',
+    default: () => 'CURRENT_TIMESTAMP',
+    onUpdate: 'CURRENT_TIMESTAMP',
+  })
   updatedAt: Date;
 
   @OneToMany(() => Hearing, (h) => h.matter)

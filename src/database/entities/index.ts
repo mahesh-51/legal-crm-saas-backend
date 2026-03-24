@@ -2,6 +2,7 @@ export * from './user.entity';
 export * from './firm.entity';
 export * from './firm-user.entity';
 export * from './client.entity';
+export * from './court-reference.entity';
 export * from './matter.entity';
 export * from './hearing.entity';
 export * from './invoice.entity';

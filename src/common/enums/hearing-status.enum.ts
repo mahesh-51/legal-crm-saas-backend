@@ -1,0 +1,6 @@
+export enum HearingStatus {
+  SCHEDULED = 'SCHEDULED',
+  COMPLETED = 'COMPLETED',
+  ADJOURNED = 'ADJOURNED',
+  CANCELLED = 'CANCELLED',
+}

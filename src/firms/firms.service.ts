@@ -11,12 +11,14 @@ import { Firm, User } from '../database/entities';
 import { UserRole } from '../common/enums/user-role.enum';
 import { CreateFirmDto } from './dto/create-firm.dto';
 import { UpdateFirmDto } from './dto/update-firm.dto';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 @Injectable()
 export class FirmsService {
   constructor(
     @InjectRepository(Firm)
     private firmRepo: Repository<Firm>,
+    private cloudinary: CloudinaryService,
   ) {}
 
   async create(dto: CreateFirmDto, ownerId: string): Promise<Firm> {
@@ -85,10 +87,17 @@ export class FirmsService {
     if (user.role !== UserRole.FIRM_ADMIN && firm.ownerId !== user.id) {
       throw new ForbiddenException('Only firm admin can update logo');
     }
-    if (!file?.path) {
+    if (!file?.buffer?.length) {
       throw new BadRequestException('No file provided');
     }
-    firm.logo = file.path;
+    const base = this.cloudinary.getBaseFolder();
+    const publicId = `${base}/firms/${id}/logo`;
+    const { secureUrl } = await this.cloudinary.uploadBuffer(file.buffer, {
+      publicId,
+      mimetype: file.mimetype,
+      overwrite: true,
+    });
+    firm.logo = secureUrl;
     return this.firmRepo.save(firm);
   }
 

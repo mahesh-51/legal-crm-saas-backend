@@ -1,21 +1,41 @@
-import { IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
+import {
+  IsArray,
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 import { MatterStatus } from '../../common/enums/matter-status.enum';
 
 export class CreateMatterDto {
   @IsString()
-  caseTitle: string;
+  matterName: string;
 
   @IsOptional()
-  @IsString()
-  court?: string;
+  @IsArray()
+  @IsString({ each: true })
+  complainants?: string[];
 
   @IsOptional()
-  @IsString()
-  caseType?: string;
+  @IsArray()
+  @IsString({ each: true })
+  defendants?: string[];
 
   @IsOptional()
   @IsEnum(MatterStatus)
   status?: MatterStatus;
+
+  @IsOptional()
+  @IsUUID()
+  courtTypeId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  courtNameId?: string;
+
+  @IsOptional()
+  @IsString()
+  caseType?: string;
 
   @IsOptional()
   @IsString()

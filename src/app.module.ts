@@ -10,6 +10,7 @@ import { UsersModule } from './users/users.module';
 import { FirmsModule } from './firms/firms.module';
 import { FirmUsersModule } from './firm-users/firm-users.module';
 import { ClientsModule } from './clients/clients.module';
+import { CourtsModule } from './courts/courts.module';
 import { MattersModule } from './matters/matters.module';
 import { HearingsModule } from './hearings/hearings.module';
 import { DocumentsModule } from './documents/documents.module';
@@ -17,6 +18,7 @@ import { InvoicesModule } from './invoices/invoices.module';
 import { InvitesModule } from './invites/invites.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
+import { CloudinaryModule } from './cloudinary/cloudinary.module';
 
 @Module({
   imports: [
@@ -24,6 +26,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
       isGlobal: true,
       load: [configuration],
     }),
+    CloudinaryModule,
     DatabaseModule,
     CommonModule,
     EmailModule,
@@ -32,6 +35,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
     FirmsModule,
     FirmUsersModule,
     ClientsModule,
+    CourtsModule,
     MattersModule,
     HearingsModule,
     DocumentsModule,
