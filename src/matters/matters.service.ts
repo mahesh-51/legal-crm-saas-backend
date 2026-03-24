@@ -73,8 +73,8 @@ export class MattersService {
         where: { clientId: In(clientIds) },
         relations: [
           'client',
-          'hearings',
-          'hearings.client',
+          'dailyListings',
+          'dailyListings.clients',
           'invoices',
           'courtType',
           'courtName',
@@ -107,7 +107,8 @@ export class MattersService {
       where: { id },
       relations: [
         'client',
-        'hearings',
+        'dailyListings',
+        'dailyListings.clients',
         'invoices',
         'documents',
         'courtType',

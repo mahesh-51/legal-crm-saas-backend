@@ -1,4 +1,5 @@
 import {
+  ArrayMinSize,
   IsArray,
   IsDateString,
   IsEnum,
@@ -6,14 +7,17 @@ import {
   IsString,
   IsUUID,
 } from 'class-validator';
-import { HearingStatus } from '../../common/enums/hearing-status.enum';
+import { DailyListingStatus } from '../../common/enums/daily-listing-status.enum';
 
-export class CreateHearingDto {
+export class CreateDailyListingDto {
   @IsUUID()
   matterId: string;
 
-  @IsUUID()
-  clientId: string;
+  /** One or more clients linked to this daily listing (e.g. co-parties). */
+  @IsArray()
+  @ArrayMinSize(1)
+  @IsUUID('4', { each: true })
+  clientIds: string[];
 
   @IsOptional()
   @IsString()
@@ -34,8 +38,8 @@ export class CreateHearingDto {
   defendants?: string[];
 
   @IsOptional()
-  @IsEnum(HearingStatus)
-  status?: HearingStatus;
+  @IsEnum(DailyListingStatus)
+  status?: DailyListingStatus;
 
   @IsDateString()
   currentDate: string;

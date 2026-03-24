@@ -30,7 +30,7 @@
       "type": "string"
     },
     {
-      "key": "hearingId",
+      "key": "dailyListingId",
       "value": "",
       "type": "string"
     },
@@ -478,10 +478,10 @@
       ]
     },
     {
-      "name": "Hearings",
+      "name": "Daily listings",
       "item": [
         {
-          "name": "Create Hearing",
+          "name": "Create daily listing",
           "request": {
             "method": "POST",
             "header": [
@@ -489,27 +489,27 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"matterId\": \"{{matterId}}\",\n  \"hearingDate\": \"2025-04-15\",\n  \"synopsis\": \"Preliminary hearing\",\n  \"orders\": \"Next hearing on May 1\"\n}"
+              "raw": "{\n  \"matterId\": \"{{matterId}}\",\n  \"clientIds\": [\"{{clientId}}\"],\n  \"caseType\": \"Civil\",\n  \"caseNo\": \"123/2025\",\n  \"complainants\": [\"Plaintiff\"],\n  \"defendants\": [\"Defendant\"],\n  \"status\": \"SCHEDULED\",\n  \"currentDate\": \"2025-04-15\",\n  \"nextDate\": \"2025-05-01\",\n  \"synopsis\": \"Arguments\",\n  \"orders\": \"Next date fixed\"\n}"
             },
-            "url": "{{baseUrl}}/hearings"
+            "url": "{{baseUrl}}/daily-listings"
           }
         },
         {
-          "name": "List Hearings by Matter",
+          "name": "List daily listings by matter",
           "request": {
             "method": "GET",
-            "url": "{{baseUrl}}/hearings/matter/{{matterId}}"
+            "url": "{{baseUrl}}/daily-listings/matter/{{matterId}}"
           }
         },
         {
-          "name": "Get Hearing by ID",
+          "name": "Get daily listing by ID",
           "request": {
             "method": "GET",
-            "url": "{{baseUrl}}/hearings/{{hearingId}}"
+            "url": "{{baseUrl}}/daily-listings/{{dailyListingId}}"
           }
         },
         {
-          "name": "Update Hearing",
+          "name": "Update daily listing",
           "request": {
             "method": "PATCH",
             "header": [
@@ -517,16 +517,16 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"hearingDate\": \"2025-04-20\",\n  \"synopsis\": \"Updated synopsis\",\n  \"orders\": \"Updated orders\"\n}"
+              "raw": "{\n  \"currentDate\": \"2025-04-20\",\n  \"nextDate\": \"2025-06-01\",\n  \"status\": \"ADJOURNED\",\n  \"synopsis\": \"Updated synopsis\",\n  \"orders\": \"Updated orders\"\n}"
             },
-            "url": "{{baseUrl}}/hearings/{{hearingId}}"
+            "url": "{{baseUrl}}/daily-listings/{{dailyListingId}}"
           }
         },
         {
-          "name": "Delete Hearing",
+          "name": "Delete daily listing",
           "request": {
             "method": "DELETE",
-            "url": "{{baseUrl}}/hearings/{{hearingId}}"
+            "url": "{{baseUrl}}/daily-listings/{{dailyListingId}}"
           }
         }
       ]

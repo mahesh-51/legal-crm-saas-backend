@@ -34,7 +34,7 @@ src/
 ├── firm-users/     # Firm member management, invites
 ├── clients/        # Client CRUD
 ├── matters/        # Case/matter CRUD
-├── hearings/       # Hearing management
+├── daily-listings/ # Daily listing / daily cases (court diary rows per matter)
 ├── documents/      # Document upload/download
 ├── invoices/       # Invoice management
 ├── invites/        # Invite creation, acceptance
@@ -140,15 +140,15 @@ Server runs at `http://localhost:3000` (or `PORT` from .env).
 | PATCH | `/matters/:id` | Update matter |
 | DELETE | `/matters/:id` | Delete matter |
 
-### Hearings
+### Daily listings (daily cases)
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/hearings` | Create hearing |
-| GET | `/hearings/matter/:matterId` | List hearings by matter |
-| GET | `/hearings/:id` | Get hearing |
-| PATCH | `/hearings/:id` | Update hearing |
-| DELETE | `/hearings/:id` | Delete hearing |
+| POST | `/daily-listings` | Create daily listing row |
+| GET | `/daily-listings/matter/:matterId` | List daily listings by matter |
+| GET | `/daily-listings/:id` | Get daily listing |
+| PATCH | `/daily-listings/:id` | Update daily listing |
+| DELETE | `/daily-listings/:id` | Delete daily listing |
 
 ### Documents
 

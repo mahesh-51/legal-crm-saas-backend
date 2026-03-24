@@ -1,4 +1,4 @@
-export enum HearingStatus {
+export enum DailyListingStatus {
   SCHEDULED = 'SCHEDULED',
   COMPLETED = 'COMPLETED',
   ADJOURNED = 'ADJOURNED',

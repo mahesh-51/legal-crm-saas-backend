@@ -11,7 +11,7 @@ import { MatterStatus } from '../../common/enums/matter-status.enum';
 import { Client } from './client.entity';
 import { Firm } from './firm.entity';
 import { User } from './user.entity';
-import { Hearing } from './hearing.entity';
+import { DailyListing } from './daily-listing.entity';
 import { Invoice } from './invoice.entity';
 import { Document } from './document.entity';
 import { CourtType, CourtName } from './court-reference.entity';
@@ -88,8 +88,8 @@ export class Matter {
   })
   updatedAt: Date;
 
-  @OneToMany(() => Hearing, (h) => h.matter)
-  hearings: Hearing[];
+  @OneToMany(() => DailyListing, (d) => d.matter)
+  dailyListings: DailyListing[];
 
   @OneToMany(() => Invoice, (i) => i.matter)
   invoices: Invoice[];

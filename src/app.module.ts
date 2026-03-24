@@ -12,7 +12,7 @@ import { FirmUsersModule } from './firm-users/firm-users.module';
 import { ClientsModule } from './clients/clients.module';
 import { CourtsModule } from './courts/courts.module';
 import { MattersModule } from './matters/matters.module';
-import { HearingsModule } from './hearings/hearings.module';
+import { DailyListingsModule } from './daily-listings/daily-listings.module';
 import { DocumentsModule } from './documents/documents.module';
 import { InvoicesModule } from './invoices/invoices.module';
 import { InvitesModule } from './invites/invites.module';
@@ -37,7 +37,7 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
     ClientsModule,
     CourtsModule,
     MattersModule,
-    HearingsModule,
+    DailyListingsModule,
     DocumentsModule,
     InvoicesModule,
     InvitesModule,

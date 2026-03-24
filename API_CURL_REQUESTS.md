@@ -281,53 +281,64 @@ curl -X DELETE http://localhost:3000/matters/<matterId> \
 
 ---
 
-## Hearings (Auth Required)
+## Daily listings (Auth Required)
 
-### Create Hearing
+### Create daily listing
+
+`clientIds` must include the matter’s primary client; you may add more clients.
 
 ```bash
-curl -X POST http://localhost:3000/hearings \
+curl -X POST http://localhost:3000/daily-listings \
   -H "Authorization: Bearer <accessToken>" \
   -H "Content-Type: application/json" \
   -d '{
     "matterId": "<matterId>",
-    "hearingDate": "2025-04-15",
-    "synopsis": "Preliminary hearing",
-    "orders": "Next hearing on May 1"
+    "clientIds": ["<clientId>"],
+    "caseType": "Civil",
+    "caseNo": "123/2025",
+    "complainants": ["A. Plaintiff"],
+    "defendants": ["B. Defendant"],
+    "status": "SCHEDULED",
+    "currentDate": "2025-04-15",
+    "nextDate": "2025-05-01",
+    "synopsis": "Arguments",
+    "orders": "Next date fixed"
   }'
 ```
 
-### List Hearings by Matter
+### List daily listings by matter
 
 ```bash
-curl -X GET http://localhost:3000/hearings/matter/<matterId> \
+curl -X GET http://localhost:3000/daily-listings/matter/<matterId> \
   -H "Authorization: Bearer <accessToken>"
 ```
 
-### Get Hearing by ID
+### Get daily listing by ID
 
 ```bash
-curl -X GET http://localhost:3000/hearings/<hearingId> \
+curl -X GET http://localhost:3000/daily-listings/<dailyListingId> \
   -H "Authorization: Bearer <accessToken>"
 ```
 
-### Update Hearing
+### Update daily listing
 
 ```bash
-curl -X PATCH http://localhost:3000/hearings/<hearingId> \
+curl -X PATCH http://localhost:3000/daily-listings/<dailyListingId> \
   -H "Authorization: Bearer <accessToken>" \
   -H "Content-Type: application/json" \
   -d '{
-    "hearingDate": "2025-04-20",
+    "currentDate": "2025-04-20",
+    "nextDate": "2025-06-01",
+    "status": "ADJOURNED",
     "synopsis": "Updated synopsis",
     "orders": "Updated orders"
   }'
 ```
 
-### Delete Hearing
+### Delete daily listing
 
 ```bash
-curl -X DELETE http://localhost:3000/hearings/<hearingId> \
+curl -X DELETE http://localhost:3000/daily-listings/<dailyListingId> \
   -H "Authorization: Bearer <accessToken>"
 ```
 
@@ -511,7 +522,7 @@ curl -X PATCH http://localhost:3000/notifications/read-all \
 | Firm Users    | `GET /firms/:firmId/users`, `POST /firms/:firmId/users/invite`, `DELETE /firms/:firmId/users/:userId` |
 | Clients       | `POST /clients`, `GET /clients`, `GET /clients/:id`, `PATCH /clients/:id`, `DELETE /clients/:id` |
 | Matters       | `POST /matters`, `GET /matters`, `GET /matters/:id`, `PATCH /matters/:id`, `DELETE /matters/:id` |
-| Hearings      | `POST /hearings`, `GET /hearings/matter/:matterId`, `GET/PATCH/DELETE /hearings/:id` |
+| Daily listings | `POST /daily-listings`, `GET /daily-listings/matter/:matterId`, `GET/PATCH/DELETE /daily-listings/:id` |
 | Documents     | `POST /documents/matter/:matterId/upload`, `GET /documents/matter/:matterId`, `GET /documents/:id`, `GET /documents/:id/download`, `DELETE /documents/:id` |
 | Invoices      | `POST /invoices`, `GET /invoices/matter/:matterId`, `GET/PATCH/DELETE /invoices/:id` |
 | Invites       | `POST /invites/client`                                                            |

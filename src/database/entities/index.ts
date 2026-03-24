@@ -4,7 +4,7 @@ export * from './firm-user.entity';
 export * from './client.entity';
 export * from './court-reference.entity';
 export * from './matter.entity';
-export * from './hearing.entity';
+export * from './daily-listing.entity';
 export * from './invoice.entity';
 export * from './document.entity';
 export * from './invite.entity';
