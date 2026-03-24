@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+
+# Build
+dist/
+build/
+*.tsbuildinfo
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Uploads (optional - uncomment if uploads shouldn't be committed)
+# uploads/
+
+# Test
+coverage/
+.nyc_output/
+
+# OS
+.DS_Store
+Thumbs.db

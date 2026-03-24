@@ -1,0 +1,738 @@
+{
+  "info": {
+    "name": "Legal CRM API",
+    "description": "Legal CRM SaaS Backend API - Import this collection into Postman. After login/signup, copy the `accessToken` to the collection variable.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "firmId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "clientId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "matterId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "hearingId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "documentId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "invoiceId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "notificationId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "inviteToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Public endpoints - No token required",
+      "auth": { "type": "noauth" },
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.accessToken) {",
+                  "        pm.collectionVariables.set('accessToken', json.accessToken);",
+                  "        console.log('accessToken saved to collection variables');",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"secret123\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "Signup as Firm",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.accessToken) {",
+                  "        pm.collectionVariables.set('accessToken', json.accessToken);",
+                  "        console.log('accessToken saved to collection variables');",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firmName\": \"ABC Law Firm\",\n  \"subdomain\": \"abc-law\",\n  \"adminName\": \"John Doe\",\n  \"adminEmail\": \"admin@abclaw.com\",\n  \"adminPassword\": \"secret123\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/signup/firm"
+          }
+        },
+        {
+          "name": "Signup as Individual Lawyer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.accessToken) {",
+                  "        pm.collectionVariables.set('accessToken', json.accessToken);",
+                  "        console.log('accessToken saved to collection variables');",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jane Smith\",\n  \"email\": \"jane@example.com\",\n  \"password\": \"secret123\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/signup/individual"
+          }
+        },
+        {
+          "name": "Signup as Client",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.accessToken) {",
+                  "        pm.collectionVariables.set('accessToken', json.accessToken);",
+                  "        console.log('accessToken saved to collection variables');",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Client Name\",\n  \"email\": \"client@example.com\",\n  \"password\": \"secret123\",\n  \"inviteToken\": \"{{inviteToken}}\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/signup/client"
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/forgot-password"
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"<reset_token_from_email>\",\n  \"newPassword\": \"newsecret123\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/reset-password"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get Current User Profile",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/users/me"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Firms",
+      "item": [
+        {
+          "name": "Create Firm",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"My Law Firm\",\n  \"subdomain\": \"my-law-firm\"\n}"
+            },
+            "url": "{{baseUrl}}/firms"
+          }
+        },
+        {
+          "name": "List Firms",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/firms"
+          }
+        },
+        {
+          "name": "Get Firm by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/firms/{{firmId}}"
+          }
+        },
+        {
+          "name": "Update Firm",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Firm Name\",\n  \"subdomain\": \"updated-subdomain\"\n}"
+            },
+            "url": "{{baseUrl}}/firms/{{firmId}}"
+          }
+        },
+        {
+          "name": "Upload Firm Logo",
+          "request": {
+            "method": "PATCH",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "logo",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/firms/{{firmId}}/logo"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Firm Users",
+      "description": "FIRM_ADMIN role required",
+      "item": [
+        {
+          "name": "List Firm Users",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/firms/{{firmId}}/users"
+          }
+        },
+        {
+          "name": "Invite Lawyer/Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"lawyer@example.com\",\n  \"role\": \"LAWYER\"\n}"
+            },
+            "url": "{{baseUrl}}/firms/{{firmId}}/users/invite"
+          }
+        },
+        {
+          "name": "Remove User from Firm",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/firms/{{firmId}}/users/{{userId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Clients",
+      "item": [
+        {
+          "name": "Create Client",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Client\",\n  \"phone\": \"+1234567890\",\n  \"email\": \"client@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/clients?firmId={{firmId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["clients"],
+              "query": [
+                { "key": "firmId", "value": "{{firmId}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Clients",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/clients?firmId={{firmId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["clients"],
+              "query": [
+                { "key": "firmId", "value": "{{firmId}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Client by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/clients/{{clientId}}"
+          }
+        },
+        {
+          "name": "Update Client",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Client Name\",\n  \"phone\": \"+0987654321\",\n  \"portalAccess\": true\n}"
+            },
+            "url": "{{baseUrl}}/clients/{{clientId}}"
+          }
+        },
+        {
+          "name": "Delete Client",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/clients/{{clientId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Matters",
+      "item": [
+        {
+          "name": "Create Matter",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"caseTitle\": \"Smith v. Jones\",\n  \"court\": \"Supreme Court\",\n  \"caseType\": \"Civil\",\n  \"status\": \"OPEN\",\n  \"cnr\": \"CNR123\",\n  \"clientId\": \"{{clientId}}\",\n  \"firmId\": \"{{firmId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/matters?firmId={{firmId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["matters"],
+              "query": [
+                { "key": "firmId", "value": "{{firmId}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Matters",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/matters?firmId={{firmId}}&clientId={{clientId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["matters"],
+              "query": [
+                { "key": "firmId", "value": "{{firmId}}" },
+                { "key": "clientId", "value": "{{clientId}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Matter by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/matters/{{matterId}}"
+          }
+        },
+        {
+          "name": "Update Matter",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"caseTitle\": \"Updated Case Title\",\n  \"status\": \"ACTIVE\"\n}"
+            },
+            "url": "{{baseUrl}}/matters/{{matterId}}"
+          }
+        },
+        {
+          "name": "Delete Matter",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/matters/{{matterId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Hearings",
+      "item": [
+        {
+          "name": "Create Hearing",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"matterId\": \"{{matterId}}\",\n  \"hearingDate\": \"2025-04-15\",\n  \"synopsis\": \"Preliminary hearing\",\n  \"orders\": \"Next hearing on May 1\"\n}"
+            },
+            "url": "{{baseUrl}}/hearings"
+          }
+        },
+        {
+          "name": "List Hearings by Matter",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/hearings/matter/{{matterId}}"
+          }
+        },
+        {
+          "name": "Get Hearing by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/hearings/{{hearingId}}"
+          }
+        },
+        {
+          "name": "Update Hearing",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hearingDate\": \"2025-04-20\",\n  \"synopsis\": \"Updated synopsis\",\n  \"orders\": \"Updated orders\"\n}"
+            },
+            "url": "{{baseUrl}}/hearings/{{hearingId}}"
+          }
+        },
+        {
+          "name": "Delete Hearing",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/hearings/{{hearingId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Documents",
+      "item": [
+        {
+          "name": "Upload Document",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/documents/matter/{{matterId}}/upload"
+          }
+        },
+        {
+          "name": "List Documents by Matter",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/documents/matter/{{matterId}}"
+          }
+        },
+        {
+          "name": "Get Document Metadata",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/documents/{{documentId}}"
+          }
+        },
+        {
+          "name": "Download Document",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/documents/{{documentId}}/download"
+          }
+        },
+        {
+          "name": "Delete Document",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/documents/{{documentId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Invoices",
+      "item": [
+        {
+          "name": "Create Invoice",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"matterId\": \"{{matterId}}\",\n  \"amount\": 5000.00,\n  \"status\": \"DRAFT\",\n  \"paymentReference\": \"REF-001\"\n}"
+            },
+            "url": "{{baseUrl}}/invoices"
+          }
+        },
+        {
+          "name": "List Invoices by Matter",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/invoices/matter/{{matterId}}"
+          }
+        },
+        {
+          "name": "Get Invoice by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/invoices/{{invoiceId}}"
+          }
+        },
+        {
+          "name": "Update Invoice",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 5500.00,\n  \"status\": \"PAID\",\n  \"paymentReference\": \"PAY-001\"\n}"
+            },
+            "url": "{{baseUrl}}/invoices/{{invoiceId}}"
+          }
+        },
+        {
+          "name": "Delete Invoice",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/invoices/{{invoiceId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Invites",
+      "item": [
+        {
+          "name": "Get Invite by Token (Public)",
+          "auth": { "type": "noauth" },
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/invites/token?token={{inviteToken}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["invites", "token"],
+              "query": [
+                { "key": "token", "value": "{{inviteToken}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Client Invite",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"client@example.com\",\n  \"role\": \"CLIENT\",\n  \"firmId\": \"{{firmId}}\",\n  \"clientId\": \"{{clientId}}\"\n}"
+            },
+            "url": "{{baseUrl}}/invites/client"
+          }
+        },
+        {
+          "name": "Accept Firm User Invite (Public)",
+          "auth": { "type": "noauth" },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.accessToken) {",
+                  "        pm.collectionVariables.set('accessToken', json.accessToken);",
+                  "        console.log('accessToken saved to collection variables');",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{inviteToken}}\",\n  \"name\": \"Jane Lawyer\",\n  \"password\": \"secret123\"\n}"
+            },
+            "url": "{{baseUrl}}/invites/accept"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "List Notifications",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/notifications"
+          }
+        },
+        {
+          "name": "Get Notification by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/notifications/{{notificationId}}"
+          }
+        },
+        {
+          "name": "Mark Notification as Read",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/notifications/{{notificationId}}/read"
+          }
+        },
+        {
+          "name": "Mark All Notifications as Read",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/notifications/read-all"
+          }
+        }
+      ]
+    }
+  ]
+}
