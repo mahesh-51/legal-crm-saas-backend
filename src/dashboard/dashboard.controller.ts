@@ -28,6 +28,12 @@ import { UserRole } from '../common/enums/user-role.enum';
  * up to 5, ordered by `createdAt`.
  *
  * mattersOpenedTrend: last 6 UTC calendar months (including current month), period `YYYY-MM`.
+ *
+ * Tasks & meetings: `kpis.pendingTasks` = open tasks (not done/cancelled). `kpis.upcomingMeetingsNextDays` =
+ * scheduled meetings with `startAt` in the next 14 UTC days. `upcomingTasks` / `upcomingMeetings` are short lists;
+ * `upcomingMeetings` includes `meetingUrl`, `meetingLinkProvider`, `shareLinkWithClient` when set.
+ * `upcomingReminders` merges task and meeting `reminderAt` in the next 7 UTC days. `recentActivity` may include
+ * `task.created` and `meeting.created` types.
  */
 @Controller('dashboard')
 @UseGuards(JwtAuthGuard)

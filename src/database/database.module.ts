@@ -16,6 +16,8 @@ import {
   Invite,
   Notification,
   PasswordResetToken,
+  Task,
+  Meeting,
 } from './entities';
 
 @Module({
@@ -46,6 +48,8 @@ import {
             Invite,
             Notification,
             PasswordResetToken,
+            Task,
+            Meeting,
           ],
           synchronize: config.get('nodeEnv') === 'development',
           logging: config.get('nodeEnv') === 'development',

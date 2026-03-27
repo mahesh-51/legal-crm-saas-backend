@@ -18,6 +18,8 @@ import { InvoicesModule } from './invoices/invoices.module';
 import { InvitesModule } from './invites/invites.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { TasksModule } from './tasks/tasks.module';
+import { MeetingsModule } from './meetings/meetings.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 
@@ -44,6 +46,8 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
     InvitesModule,
     NotificationsModule,
     DashboardModule,
+    TasksModule,
+    MeetingsModule,
   ],
   providers: [
     {

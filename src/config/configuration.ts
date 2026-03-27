@@ -1,5 +1,5 @@
 export default () => ({
-  port: parseInt(process.env.PORT || '3000', 10),
+  port: parseInt(process.env.PORT || '8000', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
   database: {
     type: (process.env.DB_TYPE || 'mysql') as 'mysql' | 'postgres',
@@ -32,7 +32,7 @@ export default () => ({
     folder: process.env.CLOUDINARY_FOLDER || 'legal-crm',
   },
   app: {
-    url: process.env.APP_URL || 'http://localhost:3000',
+    url: process.env.APP_URL || 'http://localhost:8000',
     frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
   },
 });

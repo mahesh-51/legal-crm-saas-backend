@@ -1,12 +1,6 @@
-import {
-  Injectable,
-  BadRequestException,
-  ForbiddenException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { validate as uuidValidate } from 'uuid';
 import {
   Client,
   DailyListing,
@@ -14,11 +8,17 @@ import {
   Invoice,
   Matter,
   User,
+  Task,
+  Meeting,
 } from '../database/entities';
-import { UserRole } from '../common/enums/user-role.enum';
 import { MatterStatus } from '../common/enums/matter-status.enum';
 import { InvoiceStatus } from '../common/enums/invoice-status.enum';
 import { DailyListingStatus } from '../common/enums/daily-listing-status.enum';
+import { TaskStatus } from '../common/enums/task-status.enum';
+import { TaskKind } from '../common/enums/task-kind.enum';
+import { MeetingStatus } from '../common/enums/meeting-status.enum';
+import { MeetingLinkProvider } from '../common/enums/meeting-link-provider.enum';
+import { resolveFirmScope, FirmScope } from '../common/firm-scope.util';
 
 export type DashboardKpiMetric = {
   value: number;
@@ -32,6 +32,8 @@ export type DashboardOverviewResponse = {
     openMatters: DashboardKpiMetric;
     upcomingCourtDates: DashboardKpiMetric;
     invoicesOutstanding: DashboardKpiMetric;
+    pendingTasks: DashboardKpiMetric;
+    upcomingMeetingsNextDays: DashboardKpiMetric;
   };
   recentActivity: Array<{
     id: string;
@@ -64,11 +66,52 @@ export type DashboardOverviewResponse = {
   }>;
   mattersByStatus: Array<{ status: string; count: number }>;
   mattersOpenedTrend: Array<{ period: string; count: number }>;
+  upcomingTasks: Array<{
+    id: string;
+    title: string;
+    kind: TaskKind;
+    status: TaskStatus;
+    dueAt: string | null;
+    matterId: string | null;
+    clientId: string | null;
+    dailyListingId: string | null;
+    href: string | null;
+  }>;
+  upcomingMeetings: Array<{
+    id: string;
+    title: string | null;
+    startAt: string;
+    endAt: string | null;
+    status: MeetingStatus;
+    matterId: string | null;
+    clientId: string | null;
+    dailyListingId: string | null;
+    href: string | null;
+    meetingUrl: string | null;
+    meetingLinkProvider: MeetingLinkProvider | null;
+    shareLinkWithClient: boolean;
+  }>;
+  upcomingReminders: Array<{
+    id: string;
+    source: 'task' | 'meeting';
+    title: string | null;
+    remindAt: string;
+    matterId: string | null;
+    clientId: string | null;
+    href: string | null;
+  }>;
 };
 
 const RECENT_ACTIVITY_CAP = 20;
 /** Upcoming diary KPI: daily listings whose `currentDate` falls in the next 30 UTC calendar days (inclusive of today). */
 const UPCOMING_WINDOW_DAYS = 30;
+/** Meetings KPI: scheduled meetings with `startAt` in the next N UTC days from now. */
+const MEETING_KPI_DAYS = 14;
+/** Reminder window for dashboard “upcoming reminders” (tasks + meetings). */
+const REMINDER_WINDOW_DAYS = 7;
+const UPCOMING_TASKS_CAP = 5;
+const UPCOMING_MEETINGS_CAP = 5;
+const UPCOMING_REMINDERS_CAP = 10;
 
 @Injectable()
 export class DashboardService {
@@ -83,6 +126,10 @@ export class DashboardService {
     private dailyListingRepo: Repository<DailyListing>,
     @InjectRepository(Invoice)
     private invoiceRepo: Repository<Invoice>,
+    @InjectRepository(Task)
+    private taskRepo: Repository<Task>,
+    @InjectRepository(Meeting)
+    private meetingRepo: Repository<Meeting>,
   ) {}
 
   async getOverview(
@@ -99,6 +146,9 @@ export class DashboardService {
       topDailyListings,
       mattersByStatus,
       mattersOpenedTrend,
+      upcomingTasks,
+      upcomingMeetings,
+      upcomingReminders,
     ] = await Promise.all([
       this.buildKpis(scope),
       this.buildRecentActivity(scope),
@@ -107,6 +157,9 @@ export class DashboardService {
       this.buildTopDailyListings(scope),
       this.buildMattersByStatus(scope),
       this.buildMattersOpenedTrend(scope),
+      this.buildUpcomingTasks(scope),
+      this.buildUpcomingMeetings(scope),
+      this.buildUpcomingReminders(scope),
     ]);
 
     return {
@@ -117,73 +170,44 @@ export class DashboardService {
       topDailyListings,
       mattersByStatus,
       mattersOpenedTrend,
+      upcomingTasks,
+      upcomingMeetings,
+      upcomingReminders,
     };
   }
 
   private async resolveScope(
     user: User,
     firmIdParam: string | undefined,
-  ): Promise<{
-    firmId: string | null;
-    individualUserId: string | null;
-  }> {
-    if (user.role === UserRole.CLIENT) {
-      throw new ForbiddenException('Access denied');
-    }
-
-    if (user.role === UserRole.INDIVIDUAL && !user.firmId) {
-      if (firmIdParam) {
-        throw new BadRequestException(
-          'firmId must not be set for individual users without a firm',
-        );
-      }
-      return { firmId: null, individualUserId: user.id };
-    }
-
-    if (!firmIdParam?.trim()) {
-      throw new BadRequestException('firmId is required');
-    }
-    const firmId = firmIdParam.trim();
-    if (!uuidValidate(firmId)) {
-      throw new BadRequestException('firmId must be a valid UUID');
-    }
-
-    if (user.role === UserRole.SUPER_ADMIN) {
-      const firm = await this.firmRepo.findOne({ where: { id: firmId } });
-      if (!firm) {
-        throw new NotFoundException('Firm not found');
-      }
-      return { firmId, individualUserId: null };
-    }
-
-    if (user.firmId !== firmId) {
-      throw new ForbiddenException('Access denied to this firm');
-    }
-
-    return { firmId, individualUserId: null };
+  ): Promise<FirmScope> {
+    return resolveFirmScope(user, firmIdParam, this.firmRepo);
   }
 
   private async buildKpis(
-    scope: { firmId: string | null; individualUserId: string | null },
+    scope: FirmScope,
   ): Promise<DashboardOverviewResponse['kpis']> {
     const now = new Date();
     const y = now.getUTCFullYear();
     const m = now.getUTCMonth();
     const startThisMonth = new Date(Date.UTC(y, m, 1, 0, 0, 0, 0));
 
-    const [activeClients, clientsAtMonthStart] = await Promise.all([
+    const [
+      activeClients,
+      clientsAtMonthStart,
+      openMatters,
+      upcoming,
+      outstanding,
+      pendingTasksCount,
+      upcomingMeetingsCount,
+    ] = await Promise.all([
       this.countClients(scope),
       this.countClientsAsOf(scope, startThisMonth),
+      this.countOpenMatters(scope),
+      this.countUpcomingCourtDatesNextDays(scope, UPCOMING_WINDOW_DAYS),
+      this.sumOutstandingInvoices(scope),
+      this.countPendingTasks(scope),
+      this.countUpcomingMeetingsNextDays(scope, MEETING_KPI_DAYS),
     ]);
-
-    const openMatters = await this.countOpenMatters(scope);
-
-    const upcoming = await this.countUpcomingCourtDatesNextDays(
-      scope,
-      UPCOMING_WINDOW_DAYS,
-    );
-
-    const outstanding = await this.sumOutstandingInvoices(scope);
 
     return {
       activeClients: {
@@ -205,6 +229,16 @@ export class DashboardService {
         value: outstanding,
         deltaPercent: null,
         increaseIsPositive: false,
+      },
+      pendingTasks: {
+        value: pendingTasksCount,
+        deltaPercent: null,
+        increaseIsPositive: true,
+      },
+      upcomingMeetingsNextDays: {
+        value: upcomingMeetingsCount,
+        deltaPercent: null,
+        increaseIsPositive: true,
       },
     };
   }
@@ -320,12 +354,26 @@ export class DashboardService {
   }
 
   private async buildRecentActivity(
-    scope: { firmId: string | null; individualUserId: string | null },
+    scope: FirmScope,
   ): Promise<DashboardOverviewResponse['recentActivity']> {
     const { clause, params } = this.matterWhereForScope(scope, 'matter');
     const take = RECENT_ACTIVITY_CAP;
 
-    const [matters, invoices, listings] = await Promise.all([
+    const taskQb = this.taskRepo
+      .createQueryBuilder('task')
+      .leftJoin('task.matter', 'matter')
+      .leftJoin('task.client', 'client');
+    this.applyDashboardTaskScope(taskQb, scope);
+    taskQb.orderBy('task.createdAt', 'DESC').take(take);
+
+    const meetingQb = this.meetingRepo
+      .createQueryBuilder('meeting')
+      .leftJoin('meeting.matter', 'matter')
+      .leftJoin('meeting.client', 'client');
+    this.applyDashboardMeetingScope(meetingQb, scope);
+    meetingQb.orderBy('meeting.createdAt', 'DESC').take(take);
+
+    const [matters, invoices, listings, tasks, meetings] = await Promise.all([
       this.matterRepo
         .createQueryBuilder('matter')
         .where(clause, params)
@@ -346,6 +394,8 @@ export class DashboardService {
         .orderBy('dl.createdAt', 'DESC')
         .take(take)
         .getMany(),
+      taskQb.getMany(),
+      meetingQb.getMany(),
     ]);
 
     const items: DashboardOverviewResponse['recentActivity'] = [];
@@ -388,11 +438,219 @@ export class DashboardService {
       });
     }
 
+    for (const task of tasks) {
+      items.push({
+        id: `task-${task.id}`,
+        type: 'task.created',
+        title:
+          task.kind === TaskKind.FOLLOW_UP ? 'Follow-up created' : 'Task created',
+        description: task.title,
+        occurredAt: task.createdAt.toISOString(),
+        href: dashboardHref(task.matterId, task.clientId),
+      });
+    }
+
+    for (const meeting of meetings) {
+      items.push({
+        id: `meeting-${meeting.id}`,
+        type: 'meeting.created',
+        title: 'Meeting scheduled',
+        description: meeting.title,
+        occurredAt: meeting.createdAt.toISOString(),
+        href: dashboardHref(meeting.matterId, meeting.clientId),
+      });
+    }
+
     items.sort(
       (a, b) =>
         new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime(),
     );
     return items.slice(0, RECENT_ACTIVITY_CAP);
+  }
+
+  private applyDashboardTaskScope(
+    qb: ReturnType<Repository<Task>['createQueryBuilder']>,
+    scope: FirmScope,
+  ): void {
+    if (scope.individualUserId) {
+      qb.andWhere('task.firmId IS NULL').andWhere(
+        '(task.createdById = :iid OR task.assigneeId = :iid OR (matter.id IS NOT NULL AND matter.createdById = :iid) OR (client.id IS NOT NULL AND client.createdById = :iid))',
+        { iid: scope.individualUserId },
+      );
+    } else {
+      qb.andWhere('task.firmId = :firmId', { firmId: scope.firmId });
+    }
+  }
+
+  private applyDashboardMeetingScope(
+    qb: ReturnType<Repository<Meeting>['createQueryBuilder']>,
+    scope: FirmScope,
+  ): void {
+    if (scope.individualUserId) {
+      qb.andWhere('meeting.firmId IS NULL').andWhere(
+        '(meeting.createdById = :iid OR meeting.organizerId = :iid OR (matter.id IS NOT NULL AND matter.createdById = :iid) OR (client.id IS NOT NULL AND client.createdById = :iid))',
+        { iid: scope.individualUserId },
+      );
+    } else {
+      qb.andWhere('meeting.firmId = :firmId', { firmId: scope.firmId });
+    }
+  }
+
+  private async countPendingTasks(scope: FirmScope): Promise<number> {
+    const qb = this.taskRepo
+      .createQueryBuilder('task')
+      .leftJoin('task.matter', 'matter')
+      .leftJoin('task.client', 'client')
+      .where('task.status NOT IN (:...done)', {
+        done: [TaskStatus.DONE, TaskStatus.CANCELLED],
+      });
+    this.applyDashboardTaskScope(qb, scope);
+    return qb.getCount();
+  }
+
+  private async countUpcomingMeetingsNextDays(
+    scope: FirmScope,
+    days: number,
+  ): Promise<number> {
+    const now = new Date();
+    const end = new Date(now.getTime() + days * 86400000);
+    const qb = this.meetingRepo
+      .createQueryBuilder('meeting')
+      .leftJoin('meeting.matter', 'matter')
+      .leftJoin('meeting.client', 'client')
+      .where('meeting.status = :st', { st: MeetingStatus.SCHEDULED })
+      .andWhere('meeting.startAt >= :now', { now })
+      .andWhere('meeting.startAt <= :end', { end });
+    this.applyDashboardMeetingScope(qb, scope);
+    return qb.getCount();
+  }
+
+  private async buildUpcomingTasks(
+    scope: FirmScope,
+  ): Promise<DashboardOverviewResponse['upcomingTasks']> {
+    const qb = this.taskRepo
+      .createQueryBuilder('task')
+      .leftJoin('task.matter', 'matter')
+      .leftJoin('task.client', 'client')
+      .where('task.status NOT IN (:...done)', {
+        done: [TaskStatus.DONE, TaskStatus.CANCELLED],
+      });
+    this.applyDashboardTaskScope(qb, scope);
+    qb.addSelect(
+      'CASE WHEN task.due_at IS NULL THEN 1 ELSE 0 END',
+      'due_null_sort',
+    )
+      .orderBy('due_null_sort', 'ASC')
+      .addOrderBy('task.dueAt', 'ASC')
+      .addOrderBy('task.createdAt', 'DESC')
+      .take(UPCOMING_TASKS_CAP);
+    const rows = await qb.getMany();
+    return rows.map((t) => ({
+      id: t.id,
+      title: t.title,
+      kind: t.kind,
+      status: t.status,
+      dueAt: t.dueAt ? t.dueAt.toISOString() : null,
+      matterId: t.matterId,
+      clientId: t.clientId,
+      dailyListingId: t.dailyListingId,
+      href: dashboardHref(t.matterId, t.clientId),
+    }));
+  }
+
+  private async buildUpcomingMeetings(
+    scope: FirmScope,
+  ): Promise<DashboardOverviewResponse['upcomingMeetings']> {
+    const now = new Date();
+    const end = new Date(now.getTime() + MEETING_KPI_DAYS * 86400000);
+    const qb = this.meetingRepo
+      .createQueryBuilder('meeting')
+      .leftJoin('meeting.matter', 'matter')
+      .leftJoin('meeting.client', 'client')
+      .where('meeting.status = :st', { st: MeetingStatus.SCHEDULED })
+      .andWhere('meeting.startAt >= :now', { now })
+      .andWhere('meeting.startAt <= :end', { end });
+    this.applyDashboardMeetingScope(qb, scope);
+    qb.orderBy('meeting.startAt', 'ASC').take(UPCOMING_MEETINGS_CAP);
+    const rows = await qb.getMany();
+    return rows.map((m) => ({
+      id: m.id,
+      title: m.title,
+      startAt: m.startAt.toISOString(),
+      endAt: m.endAt ? m.endAt.toISOString() : null,
+      status: m.status,
+      matterId: m.matterId,
+      clientId: m.clientId,
+      dailyListingId: m.dailyListingId,
+      href: dashboardHref(m.matterId, m.clientId),
+      meetingUrl: m.meetingUrl,
+      meetingLinkProvider: m.meetingLinkProvider,
+      shareLinkWithClient: m.shareLinkWithClient,
+    }));
+  }
+
+  private async buildUpcomingReminders(
+    scope: FirmScope,
+  ): Promise<DashboardOverviewResponse['upcomingReminders']> {
+    const now = new Date();
+    const windowEnd = new Date(
+      now.getTime() + REMINDER_WINDOW_DAYS * 86400000,
+    );
+
+    const taskQb = this.taskRepo
+      .createQueryBuilder('task')
+      .leftJoin('task.matter', 'matter')
+      .leftJoin('task.client', 'client')
+      .where('task.reminderAt IS NOT NULL')
+      .andWhere('task.reminderAt >= :now', { now })
+      .andWhere('task.reminderAt <= :windowEnd', { windowEnd })
+      .andWhere('task.status NOT IN (:...done)', {
+        done: [TaskStatus.DONE, TaskStatus.CANCELLED],
+      });
+    this.applyDashboardTaskScope(taskQb, scope);
+    const taskRows = await taskQb.getMany();
+
+    const meetQb = this.meetingRepo
+      .createQueryBuilder('meeting')
+      .leftJoin('meeting.matter', 'matter')
+      .leftJoin('meeting.client', 'client')
+      .where('meeting.reminderAt IS NOT NULL')
+      .andWhere('meeting.reminderAt >= :now', { now })
+      .andWhere('meeting.reminderAt <= :windowEnd', { windowEnd })
+      .andWhere('meeting.status = :st', { st: MeetingStatus.SCHEDULED });
+    this.applyDashboardMeetingScope(meetQb, scope);
+    const meetingRows = await meetQb.getMany();
+
+    const merged: DashboardOverviewResponse['upcomingReminders'] = [];
+    for (const t of taskRows) {
+      if (!t.reminderAt) continue;
+      merged.push({
+        id: t.id,
+        source: 'task',
+        title: t.title,
+        remindAt: t.reminderAt.toISOString(),
+        matterId: t.matterId,
+        clientId: t.clientId,
+        href: dashboardHref(t.matterId, t.clientId),
+      });
+    }
+    for (const m of meetingRows) {
+      if (!m.reminderAt) continue;
+      merged.push({
+        id: m.id,
+        source: 'meeting',
+        title: m.title,
+        remindAt: m.reminderAt.toISOString(),
+        matterId: m.matterId,
+        clientId: m.clientId,
+        href: dashboardHref(m.matterId, m.clientId),
+      });
+    }
+    merged.sort(
+      (a, b) =>
+        new Date(a.remindAt).getTime() - new Date(b.remindAt).getTime(),
+    );
+    return merged.slice(0, UPCOMING_REMINDERS_CAP);
   }
 
   private async buildTopClients(
@@ -557,6 +815,15 @@ export class DashboardService {
 
     return out;
   }
+}
+
+function dashboardHref(
+  matterId: string | null,
+  clientId: string | null,
+): string | null {
+  if (matterId) return `/matters/${matterId}`;
+  if (clientId) return `/clients/${clientId}`;
+  return null;
 }
 
 /** % growth from baseline to current (e.g. active clients vs start of UTC month). */

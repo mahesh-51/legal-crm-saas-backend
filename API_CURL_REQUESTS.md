@@ -508,6 +508,119 @@ curl -X PATCH http://localhost:3000/notifications/read-all \
 
 ---
 
+## Dashboard (Auth Required)
+
+Firm-scoped overview: `firmId` query required for firm users and super admins (same as clients/matters). Omit `firmId` only for individual lawyers without a firm.
+
+### Overview (KPIs, activity, tasks, meetings, reminders)
+
+```bash
+curl -X GET "http://localhost:3000/dashboard/overview?firmId=<firmId>" \
+  -H "Authorization: Bearer <accessToken>"
+```
+
+Response includes `kpis.pendingTasks`, `kpis.upcomingMeetingsNextDays`, `upcomingTasks`, `upcomingMeetings`, `upcomingReminders`, and extended `recentActivity` types (`task.created`, `meeting.created`).
+
+---
+
+## Tasks (Auth Required)
+
+Each task must reference at least one of `matterId`, `clientId`, or `dailyListingId` (daily listing implies a matter). Use query `firmId` for firm users / super admin on write and list.
+
+### Create Task
+
+```bash
+curl -X POST "http://localhost:3000/tasks?firmId=<firmId>" \
+  -H "Authorization: Bearer <accessToken>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "matterId": "<matterId>",
+    "title": "File written statement",
+    "description": "Optional",
+    "kind": "task",
+    "status": "pending",
+    "dueAt": "2025-04-01T10:00:00.000Z",
+    "reminderAt": "2025-03-31T09:00:00.000Z"
+  }'
+```
+
+`kind`: `task` | `follow_up`. `status`: `pending` | `in_progress` | `done` | `cancelled`.
+
+### List Tasks
+
+```bash
+curl -X GET "http://localhost:3000/tasks?firmId=<firmId>&matterId=<matterId>&status=pending" \
+  -H "Authorization: Bearer <accessToken>"
+```
+
+### Get / Update / Delete Task
+
+```bash
+curl -X GET "http://localhost:3000/tasks/<taskId>" \
+  -H "Authorization: Bearer <accessToken>"
+
+curl -X PATCH "http://localhost:3000/tasks/<taskId>" \
+  -H "Authorization: Bearer <accessToken>" \
+  -H "Content-Type: application/json" \
+  -d '{ "status": "done" }'
+
+curl -X DELETE "http://localhost:3000/tasks/<taskId>" \
+  -H "Authorization: Bearer <accessToken>"
+```
+
+---
+
+## Meetings (Auth Required)
+
+Same linking rules as tasks (`matterId`, `clientId`, or `dailyListingId`). `startAt` is required.
+
+### Create Meeting
+
+Paste a **Google Meet**, **Microsoft Teams**, or **Zoom** join URL in `meetingUrl`, set `meetingLinkProvider` so the UI can show the right icon, and use `shareLinkWithClient` (default `true`) to control whether **client** API responses include the join link.
+
+```bash
+curl -X POST "http://localhost:3000/meetings?firmId=<firmId>" \
+  -H "Authorization: Bearer <accessToken>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "clientId": "<clientId>",
+    "title": "Client consultation",
+    "startAt": "2025-04-02T14:00:00.000Z",
+    "endAt": "2025-04-02T15:00:00.000Z",
+    "location": "Video call",
+    "meetingUrl": "https://teams.microsoft.com/l/meetup-join/...",
+    "meetingLinkProvider": "microsoft_teams",
+    "shareLinkWithClient": true,
+    "reminderAt": "2025-04-02T13:00:00.000Z"
+  }'
+```
+
+`meetingLinkProvider`: `google_meet` | `microsoft_teams` | `zoom` | `other`.
+
+### List Meetings
+
+```bash
+curl -X GET "http://localhost:3000/meetings?firmId=<firmId>&status=scheduled" \
+  -H "Authorization: Bearer <accessToken>"
+```
+
+### Get / Update / Delete Meeting
+
+```bash
+curl -X GET "http://localhost:3000/meetings/<meetingId>" \
+  -H "Authorization: Bearer <accessToken>"
+
+curl -X PATCH "http://localhost:3000/meetings/<meetingId>" \
+  -H "Authorization: Bearer <accessToken>" \
+  -H "Content-Type: application/json" \
+  -d '{ "status": "completed" }'
+
+curl -X DELETE "http://localhost:3000/meetings/<meetingId>" \
+  -H "Authorization: Bearer <accessToken>"
+```
+
+---
+
 ## Quick Reference
 
 | Category      | Public Endpoints                                                                 |
@@ -527,3 +640,6 @@ curl -X PATCH http://localhost:3000/notifications/read-all \
 | Invoices      | `POST /invoices`, `GET /invoices/matter/:matterId`, `GET/PATCH/DELETE /invoices/:id` |
 | Invites       | `POST /invites/client`                                                            |
 | Notifications | `GET /notifications`, `GET /notifications/:id`, `PATCH /notifications/:id/read`, `PATCH /notifications/read-all` |
+| Dashboard     | `GET /dashboard/overview`                                                         |
+| Tasks         | `POST /tasks`, `GET /tasks`, `GET/PATCH/DELETE /tasks/:id`                        |
+| Meetings      | `POST /meetings`, `GET /meetings`, `GET/PATCH/DELETE /meetings/:id`               |
