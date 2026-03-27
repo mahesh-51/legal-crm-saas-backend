@@ -8,6 +8,7 @@ import {
 import { FirmRole } from '../../common/enums/firm-role.enum';
 import { Firm } from './firm.entity';
 import { User } from './user.entity';
+import { ModulePermissionSelection } from '../../common/types/module-permission.type';
 
 @Entity('firm_users')
 export class FirmUser {
@@ -33,4 +34,7 @@ export class FirmUser {
     enum: FirmRole,
   })
   role: FirmRole;
+
+  @Column({ type: 'json', name: 'module_permissions', nullable: true })
+  modulePermissions: ModulePermissionSelection[] | null;
 }

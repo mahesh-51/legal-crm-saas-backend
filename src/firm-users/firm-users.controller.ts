@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Delete,
   Body,
   Param,
@@ -15,6 +16,7 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { User } from '../database/entities';
 import { UserRole } from '../common/enums/user-role.enum';
 import { InviteFirmUserDto } from './dto/invite-firm-user.dto';
+import { UpdateModulePermissionsDto } from './dto/update-module-permissions.dto';
 
 @Controller('firms/:firmId/users')
 @UseGuards(JwtAuthGuard)
@@ -48,5 +50,22 @@ export class FirmUsersController {
     @CurrentUser() user: User,
   ) {
     return this.firmUsersService.remove(firmId, userId, user);
+  }
+
+  @Patch(':userId/module-permissions')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.FIRM_ADMIN, UserRole.SUPER_ADMIN)
+  updateModulePermissions(
+    @Param('firmId') firmId: string,
+    @Param('userId') userId: string,
+    @Body() dto: UpdateModulePermissionsDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.firmUsersService.updateModulePermissions(
+      firmId,
+      userId,
+      dto.modulePermissions,
+      user,
+    );
   }
 }

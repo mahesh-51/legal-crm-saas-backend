@@ -4,6 +4,8 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { Public } from '../common/decorators/public.decorator';
 import { CreateInviteDto } from './dto/create-invite.dto';
 import { IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { User } from '../database/entities';
 
 class AcceptInviteDto {
   @IsString()
@@ -19,9 +21,21 @@ class AcceptInviteDto {
   password: string;
 }
 
+class AcceptExistingInviteDto {
+  @IsString()
+  @IsNotEmpty()
+  token: string;
+}
+
 @Controller('invites')
 export class InvitesController {
   constructor(private readonly invitesService: InvitesService) {}
+
+  @Get('modules-actions')
+  @UseGuards(JwtAuthGuard)
+  getModuleActions() {
+    return this.invitesService.getModuleActionsCatalog();
+  }
 
   @Get('token')
   @Public()
@@ -39,5 +53,14 @@ export class InvitesController {
   @Public()
   acceptInvite(@Body() dto: AcceptInviteDto) {
     return this.invitesService.acceptFirmUserInvite(dto);
+  }
+
+  @Post('accept-existing')
+  @UseGuards(JwtAuthGuard)
+  acceptExistingInvite(
+    @Body() dto: AcceptExistingInviteDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.invitesService.acceptExistingUserInvite(dto.token, user);
   }
 }

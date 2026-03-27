@@ -14,12 +14,17 @@ export default () => ({
     expiresIn: process.env.JWT_EXPIRES_IN || '7d',
   },
   email: {
+    provider: process.env.EMAIL_PROVIDER || 'smtp',
     host: process.env.SMTP_HOST || 'smtp.example.com',
     port: parseInt(process.env.SMTP_PORT || '587', 10),
     secure: process.env.SMTP_SECURE === 'true',
     user: process.env.SMTP_USER || '',
     password: process.env.SMTP_PASSWORD || '',
     from: process.env.SMTP_FROM || 'noreply@legalcrm.com',
+  },
+  resend: {
+    apiKey: process.env.RESEND_API_KEY || '',
+    from: process.env.RESEND_FROM || process.env.SMTP_FROM || 'noreply@legalcrm.com',
   },
   upload: {
     path: process.env.UPLOAD_PATH || './uploads',
